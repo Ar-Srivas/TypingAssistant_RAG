@@ -59,7 +59,7 @@ Ensure the following dependencies are available inside your AI Workbench environ
 - **`requirements.txt`**: Lists all dependencies necessary to run the project.
 - **Dockerfile**: Defines the container image for the application to run on NVIDIA AI Workbench.
 
-## Getting Started on NVIDIA AI Workbench
+## Getting Started
 
 1. **Clone the Repository**:
     you can use github to easily clone or get started with a workspace. Install all the requirements.
