@@ -8,18 +8,34 @@ box-sizing: border-box;
 .wrapper {
 width: 100%;
 max-width: 1200px;
-margin: 1rem auto 0;
+margin: 2rem auto;
 display: flex;
-gap: 1rem;
-justify-content: start;
-align-items: start;
+flex-direction: column;
+align-items: center;
 padding: 1rem;
 }
 
 .editor {
 width: 100%;
-max-width: 100%;
-height: calc(100vh - 13rem);
+max-width: 800px;
+margin: 0 auto;
+background: white;
+border-radius: 8px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#editor-container {
+min-height: 400px;
+}
+
+.ql-toolbar {
+border-top-left-radius: 8px;
+border-top-right-radius: 8px;
+}
+
+.ql-container {
+border-bottom-left-radius: 8px;
+border-bottom-right-radius: 8px;
 }
 
 .output {
@@ -80,6 +96,7 @@ body.dark-mode {
 .dark-mode .btn {
   background: #444;
   color: white;
+  border: 1px solid #666;
 }
 
 .dark-mode .btn:hover {
@@ -87,20 +104,22 @@ body.dark-mode {
 }
 
 .dark-mode .ql-toolbar {
-  background: #333;
+  background: #444 !important;
   border: 1px solid #555;
   color: white;
+  border-color: #666 !important;
 }
 
 .dark-mode .ql-container {
-  background: #222;
+  background: #333 !important;
   color: white;
   border: 1px solid #555;
+  border-color: #666 !important;
 }
 
 .dark-mode .ql-editor {
   background: #222;
-  color: white;
+  color: white !important;
   min-height: 400px;
   padding: 1rem;
 }
