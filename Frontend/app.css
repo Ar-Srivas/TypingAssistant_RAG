@@ -51,7 +51,9 @@ background-color: rgba(55, 68, 71, 0.276);
 .save-button {
 background-color: rgb(87, 171, 194);
 }
-
+.toggle-dark-mode{
+background-color: rgb(87, 171, 194);;
+}
 
 
 .output img {
@@ -63,6 +65,25 @@ width: 100%;
 body.dark-mode {
   background: #121212;
   color: #ffffff;
+}
+
+.dark-mode {
+  background: #222;
+  color: white;
+}
+
+.dark-mode .editor {
+  background: #333;
+  color: white;
+}
+
+.dark-mode .btn {
+  background: #444;
+  color: white;
+}
+
+.dark-mode .btn:hover {
+  background: #555;
 }
 
 .dark-mode .ql-toolbar {

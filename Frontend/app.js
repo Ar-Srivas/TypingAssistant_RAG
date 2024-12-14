@@ -20,24 +20,7 @@ const quill = new Quill("#editor-container", {
   },
 });
 
-// Preview Button Logic
-previewBtn.addEventListener("click", () => {
-  const content = quill.root.innerHTML;
-  output.classList.add("active");
-  setTimeout(() => {
-    output.innerHTML = content;  // Use innerHTML instead of textContent
-  }, 1200);
-});
-
 // Toggle Dark Mode
-toggleBtn.addEventListener("click", () => {
-  document.body.classList.toggle("dark-mode");
-
-  // Change Quill theme colors on toggle
-  const editorContainer = document.querySelector("#editor-container");
-  editorContainer.classList.toggle("dark-editor");
-
-  toggleBtn.textContent = document.body.classList.contains("dark-mode")
-    ? "Switch to Light Mode"
-    : "Switch to Dark Mode";
+toggleBtn.addEventListener('click', function() {
+    document.body.classList.toggle('dark-mode');
 });
