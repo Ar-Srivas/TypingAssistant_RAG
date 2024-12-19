@@ -6,7 +6,6 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import './app.css';
 
-// Update PDF.js worker configuration
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const App = () => {
@@ -16,6 +15,7 @@ const App = () => {
   const [pdfFile, setPdfFile] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
 
   useEffect(() => {
     if (!editorRef.current) {
@@ -36,24 +36,79 @@ const App = () => {
           toolbar: toolbarOptions
         }
       });
+
+      editorRef.current.on('text-change', handleTextChange);
     }
   }, []);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setError(null);
     setIsLoading(true);
-    
+
     if (file) {
       try {
         const fileUrl = URL.createObjectURL(file);
         setPdfFile(fileUrl);
         setPageNumber(1);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload_pdf', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Error uploading PDF file');
+        }
+
+        console.log('PDF uploaded successfully');
+
       } catch (err) {
-        setError('Error loading PDF file');
+        setError('Error uploading PDF file');
         console.error(err);
       } finally {
         setIsLoading(false);
+      }
+    }
+  };
+
+  const handleTextChange = async () => {
+    if (!editorRef.current) return;
+
+    const text = editorRef.current.getText();
+    const lastChar = text.slice(-1);
+
+    console.log('Text changed:', text, 'Last char:', lastChar);
+
+    if (lastChar === ':') {
+      console.log('Sending request to backend with query:', text);
+      try {
+        const response = await fetch('/api/get_suggestion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query: text })
+        });
+
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+
+        const data = JSON.parse(responseText);
+        console.log('Parsed response:', data);
+
+        if (data.suggestion) {
+          console.log('Applying suggestion:', data.suggestion);
+          setSuggestion(data.suggestion);
+          const insertPosition = editorRef.current.getLength() - 1;
+          editorRef.current.insertText(insertPosition, ` ${data.suggestion}`);
+        }
+      } catch (err) {
+        console.error('Error in handleTextChange:', err);
+        setError('Failed to get suggestion');
       }
     }
   };
@@ -64,6 +119,7 @@ const App = () => {
         <div className="editor-section">
           <div id="editor-container"></div>
           <button className="save-button btn">Save</button>
+          {suggestion && <div className="suggestion-box">{suggestion}</div>}
         </div>
         <div className="pdf-section">
           <input 

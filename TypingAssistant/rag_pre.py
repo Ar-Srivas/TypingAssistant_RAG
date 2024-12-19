@@ -5,6 +5,7 @@ from langchain.vectorstores import FAISS
 from langchain.docstore import InMemoryDocstore
 import numpy as np
 from huggingface_hub import InferenceClient
+import logging
 
 embedding_model = SentenceTransformer('multi-qa-mpnet-base-dot-v1')
 
@@ -62,10 +63,10 @@ def embed_chunks(chunks):
     
     return faiss_vector_store
 
-def create_vectorspace(pdf):
-    pdf_read = PyPDF2.PdfReader(pdf)
-    text = pdf_to_text(pdf_read)
-    chunks = create_chunks(text, pdf_read)
+def create_vectorspace(pdf_stream):
+    pdf = PyPDF2.PdfReader(pdf_stream)
+    text = pdf_to_text(pdf)
+    chunks = create_chunks(text, pdf)
     vectorDB = embed_chunks(chunks)
     return vectorDB
 
@@ -87,11 +88,29 @@ def send_to_llm(inference_client: InferenceClient, query, context):
     )
     return response['choices'][0]['message']['content']
 
-def get_suggestion(client, query, faiss_index):
-    embedded_query = embedding_model.encode([query])
-    distances, indices = faiss_index.index.search(embedded_query, k=3)
-    docs = []
-    for i in indices[0]:
-        docs.append(faiss_index.docstore.search(i))
-    context = " ".join(docs)
-    return send_to_llm(client, query, context)
+def get_suggestion(client, query, vectorDB):
+    try:
+        logging.info(f"Processing query: {query}")
+        embedded_query = embedding_model.encode([query])
+        
+        # Search for relevant documents
+        D, I = vectorDB.search(embedded_query, k=1)
+        logging.info(f"Search results - Distances: {D}, Indices: {I}")
+        
+        if len(I) > 0 and I[0][0] != -1:
+            # Get context from the vector store
+            context = vectorDB.docstore[I[0][0]]
+            logging.info(f"Found context: {context[:100]}...")  # Log first 100 chars
+            
+            # Generate suggestion
+            suggestion = send_to_llm(client, query, context)
+            logging.info(f"Generated suggestion: {suggestion}")
+            
+            return suggestion
+        else:
+            logging.warning("No relevant context found")
+            return "No relevant information found"
+            
+    except Exception as e:
+        logging.error(f"Error in get_suggestion: {e}")
+        return f"Error generating suggestion: {str(e)}"
