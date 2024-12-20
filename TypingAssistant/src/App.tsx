@@ -5,6 +5,7 @@ import 'quill/dist/quill.snow.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import './app.css';
+import debounce from 'lodash.debounce';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -15,7 +16,7 @@ const App = () => {
   const [pdfFile, setPdfFile] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (!editorRef.current) {
@@ -37,7 +38,7 @@ const App = () => {
         }
       });
 
-      editorRef.current.on('text-change', handleTextChange);
+      editorRef.current.on('text-change', debounce(handleTextChange, 500));
     }
   }, []);
 
@@ -55,7 +56,7 @@ const App = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/upload_pdf', {
+        const response = await fetch('http://127.0.0.1:5000/upload_pdf', {
           method: 'POST',
           body: formData
         });
@@ -63,8 +64,6 @@ const App = () => {
         if (!response.ok) {
           throw new Error('Error uploading PDF file');
         }
-
-        console.log('PDF uploaded successfully');
 
       } catch (err) {
         setError('Error uploading PDF file');
@@ -79,37 +78,36 @@ const App = () => {
     if (!editorRef.current) return;
 
     const text = editorRef.current.getText();
-    const lastChar = text.slice(-1);
-
-    console.log('Text changed:', text, 'Last char:', lastChar);
+    const lastChar = text.slice(-2, -1); // Check the second last character
 
     if (lastChar === ':') {
-      console.log('Sending request to backend with query:', text);
+      const query = text.slice(0, -2).trim(); // Remove the last two characters
       try {
-        const response = await fetch('/api/get_suggestion', {
+        const response = await fetch('http://127.0.0.1:5000/get_suggestion', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ query: text })
+          body: JSON.stringify({ query })
         });
 
-        const responseText = await response.text();
-        console.log('Raw response:', responseText);
-
-        const data = JSON.parse(responseText);
-        console.log('Parsed response:', data);
+        const data = await response.json();
 
         if (data.suggestion) {
-          console.log('Applying suggestion:', data.suggestion);
-          setSuggestion(data.suggestion);
-          const insertPosition = editorRef.current.getLength() - 1;
-          editorRef.current.insertText(insertPosition, ` ${data.suggestion}`);
+          setSuggestions([data.suggestion]);
         }
       } catch (err) {
         console.error('Error in handleTextChange:', err);
         setError('Failed to get suggestion');
       }
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    if (editorRef.current) {
+      const insertPosition = editorRef.current.getLength() - 1;
+      editorRef.current.insertText(insertPosition, ` ${suggestion}`);
+      setSuggestions([]);
     }
   };
 
@@ -119,7 +117,19 @@ const App = () => {
         <div className="editor-section">
           <div id="editor-container"></div>
           <button className="save-button btn">Save</button>
-          {suggestion && <div className="suggestion-box">{suggestion}</div>}
+          {suggestions.length > 0 && (
+            <div className="suggestion-dropdown">
+              {suggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  className="suggestion-item"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="pdf-section">
           <input 

@@ -6,13 +6,21 @@ from langchain.docstore import InMemoryDocstore
 import numpy as np
 from huggingface_hub import InferenceClient
 import logging
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Read the API key from the environment variable
+api_key = os.getenv("RAG_API_KEY")
 
 embedding_model = SentenceTransformer('multi-qa-mpnet-base-dot-v1')
 
 repo_id = "microsoft/Phi-3.5-mini-instruct"
 
 client = InferenceClient(
-    api_key="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",
+    api_key=api_key,
     model=repo_id,
     timeout=120,
 )
@@ -55,7 +63,7 @@ def embed_chunks(chunks):
     index_to_docstore_id = {i: i for i in range(len(chunks))}
     
     faiss_vector_store = FAISS(
-        embedding_function=embeddings,
+        embedding_function=embedding_model.encode,
         index=faiss_index,
         docstore=docstore,
         index_to_docstore_id=index_to_docstore_id
@@ -94,12 +102,13 @@ def get_suggestion(client, query, vectorDB):
         embedded_query = embedding_model.encode([query])
         
         # Search for relevant documents
-        D, I = vectorDB.search(embedded_query, k=1)
-        logging.info(f"Search results - Distances: {D}, Indices: {I}")
+        distances, indices = vectorDB.index.search(np.array(embedded_query), k=1)
+        logging.info(f"Search results - distances: {distances}, indices: {indices}")
         
-        if len(I) > 0 and I[0][0] != -1:
+        if indices.size > 0 and indices[0][0] != -1:
             # Get context from the vector store
-            context = vectorDB.docstore[I[0][0]]
+            context_id = indices[0][0]
+            context = vectorDB.docstore.search(context_id)
             logging.info(f"Found context: {context[:100]}...")  # Log first 100 chars
             
             # Generate suggestion

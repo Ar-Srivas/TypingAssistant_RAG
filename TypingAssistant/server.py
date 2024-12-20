@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Add this import
+from flask_cors import CORS
 from rag_pre import create_vectorspace, get_suggestion, client
-import PyPDF2
 import io
 import logging
 
@@ -10,7 +9,7 @@ CORS(app)  # Enable CORS
 vectorDB = None
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 @app.route('/upload_pdf', methods=['POST'])
 def upload_pdf():
@@ -45,4 +44,4 @@ def get_suggestion_route():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(port=5000, debug=True)
