@@ -14,7 +14,7 @@ client = InferenceClient(
     api_key="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",
     model=repo_id,
     timeout=120,
-)
+) 
 
 def pdf_to_text(pdf):
     text = ""
