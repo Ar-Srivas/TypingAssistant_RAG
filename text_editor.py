@@ -6,7 +6,7 @@ import sys
 import io
 
 # Import necessary functions from rag_prediction
-from rag_pre import create_vectorspace, get_suggestion, client
+from TypingAssistant.rag_pre import create_vectorspace, get_suggestion, client
 
 # Global variables
 current_font_family = "Arial"
